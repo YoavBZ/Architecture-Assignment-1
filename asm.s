@@ -1,14 +1,27 @@
 section .text
-global _sum
+global mulByTen, addRecursively
 
-_sum:
-    push rbp                    ; Save caller state
-    mov rbp, rsp
+mulByTen:
+    push rbp
 
-    mov rax, rdi        ; Copy function args to registers: leftmost...
-    mov rbx, rsi        ; Next argument...
-    add rax,rbx                 ; sum 2 arguments
-    mov [rbp-8], rax
+    mov rax, rdi                ; Get cell
+    mov rbx, 0xA
+    mul rbx
+    mov [rdi], rax
+    mov rax, rdx                ; Save higher order qword
 
     pop rbp                     ; Restore caller state
+    ret
+
+addRecursively:
+    push rbp
+    
+    add qword [rdi], rsi        ; Adding the value to the currect address
+    mov rcx, rdx
+    addCarry:
+        mov rdi, rdi+8
+        adc qword [rdi], 0
+        loop addCarry, rdx
+    
+    pop rbp
     ret
