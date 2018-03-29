@@ -20,10 +20,10 @@ Stack s;
 
 extern char mulByTen(char *value);
 extern char addRecursively(char *value, short toAdd, long loopCounter);
-// extern _add(Bignum a, Bignum b);
-// extern _sub(Bignum a, Bignum b);
-// extern _mul(Bignum a, Bignum b);
-// extern _div(Bignum a, Bignum b);
+extern void _add(Bignum n1, Bignum n2, Bignum result, long counter);
+extern void _sub(Bignum n1, Bignum n2, Bignum result, long counter);
+extern void _mul(Bignum n1, Bignum n2, Bignum result, long counter);
+extern void _div(Bignum n1, Bignum n2, Bignum result, long counter);
 
 void printBignum(Bignum *n)
 {
@@ -71,6 +71,11 @@ void addQwordIfNeeded(Bignum *n, char next)
     }
 }
 
+char maxWords(Bignum n1, Bignum n2)
+{
+    return n1.numOfQwords > n2.numOfQwords ? n1.numOfQwords : n2.numOfQwords;
+}
+
 // Return 1 if |n1|>|n2|, -1 if |n1|<|n2|, and 0 if there're equal
 char compareAbs(Bignum n1, Bignum n2)
 {
@@ -106,20 +111,21 @@ void mulByTenRecursively(Bignum *n)
 Bignum operate(Bignum n1, Bignum n2, char op)
 {
     Bignum result;
+    long numOfQwords = maxWords(n1, n2);
     switch (op)
     {
     case '+':
-        result.value[max(n1.numOfQwords, n2.numOfQwords)];
+        result.value = malloc(numOfQwords);
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
             result.negative = 1;
-            _add(n1, n2, result, maxWords(n1, n2));
+            _add(n1, n2, result, numOfQwords);
         }
         else if (n1.negative)
         {
             // n1 is negative, n2 is positive
-            _sub(n2, n1, result);
+            _sub(n2, n1, result, numOfQwords);
             if (compareAbs(n1, n2) == 1)
             {
                 result.negative = 1;
@@ -128,7 +134,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
-            _sub(n1, n2, result);
+            _sub(n1, n2, result, numOfQwords);
             if (compareAbs(n1, n2) == -1)
             {
                 result.negative = 1;
@@ -138,15 +144,15 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 and n2 are positive
             result.negative = 0;
-            _add(n1, n2, result);
+            _add(n1, n2, result, numOfQwords);
         }
         break;
     case '-':
-        result.value[max(n1.numOfQwords, n2.numOfQwords)];
+        result.value = malloc(numOfQwords);
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
-            _sub(n2, n1, result);
+            _sub(n2, n1, result, numOfQwords);
             if (compareAbs(n1, n2) == 1)
             {
                 result.negative = 1;
@@ -156,18 +162,18 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 is negative, n2 is positive
             result.negative = 1;
-            _add(n1, n2, result);
+            _add(n1, n2, result, numOfQwords);
         }
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
             result.negative = 0;
-            _add(n1, n2, result);
+            _add(n1, n2, result, numOfQwords);
         }
         else
         {
             // n1 and n2 are positive
-            _sub(n1, n2, result);
+            _sub(n1, n2, result, numOfQwords);
             if (compareAbs(n1, n2) == -1)
             {
                 result.negative = 1;
@@ -176,11 +182,13 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         break;
     case '*':
         result.negative = n1.negative & n2.negative;
-        _mul(n1, n2, result);
+        result.value = malloc(n1.numOfQwords + n2.numOfQwords);
+        _mul(n1, n2, result, numOfQwords);
         break;
     case '/':
         result.negative = n1.negative & n2.negative;
-        _div(n1, n2, result);
+        result.value = malloc(n1.numOfQwords + n2.numOfQwords);
+        _div(n1, n2, result, numOfQwords);
         break;
     }
     return result;
