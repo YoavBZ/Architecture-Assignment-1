@@ -71,6 +71,25 @@ void addQwordIfNeeded(Bignum *n, char next)
     }
 }
 
+// Return 1 if |n1|>|n2|, -1 if |n1|<|n2|, and 0 if there're equal
+char compareAbs(Bignum n1, Bignum n2)
+{
+    if (n1.numOfQwords > n2.numOfQwords)
+    {
+        return 1;
+    }
+    else if (n1.numOfQwords < n2.numOfQwords)
+    {
+        return -1;
+    }
+    for (int i = n1.numOfQwords - 1; i >= 0; i--)
+    {
+        if (n1.value[i] != n2.value[i])
+            return n1.value[i] > n2.value[i] ? 1 : -1;
+    }
+    return 0;
+}
+
 void mulByTenRecursively(Bignum *n)
 {
     char next = 0;
@@ -91,7 +110,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
     switch (op)
     {
     case '+':
-        result.value[max(n1.numOfQwords, n2.numOfQwords) + 1];
+        result.value[max(n1.numOfQwords, n2.numOfQwords)];
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
@@ -102,34 +121,18 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 is negative, n2 is positive
             result.value = _sub(n2.value, n1.value);
-            if (n1.numOfQwords > n2.numOfQwords)
+            if (compareAbs(n1, n2) == 1)
             {
                 result.negative = 1;
-            }
-            else if (n1.numOfQwords < n2.numOfQwords)
-            {
-                result.negative = 0;
-            }
-            else
-            {
-                result.negative = findMax(n1, n2);
             }
         }
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
             result.value = _sub(n1.value, n2.value);
-            if (n1.numOfQwords > n2.numOfQwords)
-            {
-                result.negative = 0;
-            }
-            else if (n1.numOfQwords < n2.numOfQwords)
+            if (compareAbs(n1, n2) == -1)
             {
                 result.negative = 1;
-            }
-            else
-            {
-                result.negative = findMax(n1, n2);
             }
         }
         else
@@ -140,22 +143,14 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         }
         break;
     case '-':
-        result.value[max(n1.numOfQwords, n2.numOfQwords) + 1];
+        result.value[max(n1.numOfQwords, n2.numOfQwords)];
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
             result.value = _sub(n2.value, n1.value);
-            if (n1.numOfQwords > n2.numOfQwords)
+            if (compareAbs(n1, n2) == 1)
             {
                 result.negative = 1;
-            }
-            else if (n1.numOfQwords < n2.numOfQwords)
-            {
-                result.negative = 0;
-            }
-            else
-            {
-                result.negative = findMax(n1, n2);
             }
         }
         else if (n1.negative)
@@ -174,17 +169,9 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 and n2 are positive
             result.value = _sub(n1.value, n2.value);
-            if (n1.numOfQwords > n2.numOfQwords)
-            {
-                result.negative = 0;
-            }
-            else if (n1.numOfQwords < n2.numOfQwords)
+            if (compareAbs(n1, n2) == -1)
             {
                 result.negative = 1;
-            }
-            else
-            {
-                result.negative = findMax(n1, n2);
             }
         }
         break;
