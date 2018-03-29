@@ -4,8 +4,8 @@
 
 typedef struct Bignum
 {
-    long numOfQwords;
     char *value;
+    long numOfQwords;
     char negative;
 } Bignum;
 
@@ -98,9 +98,8 @@ void mulByTenRecursively(Bignum *n)
     addQwordIfNeeded(n, next);
     for (; i >= 0; i--)
     {
-        // Adding dx to the next word, won't overflow
-        next = mulByTen(&(n->value[i]));
-        n->value[i + 1] += next;
+        // Adding ah to the next word, won't overflow
+        n->value[i + 1] += mulByTen(&(n->value[i]));
     }
 }
 
@@ -115,12 +114,12 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 and n2 are negative
             result.negative = 1;
-            result.value = _add(n1.value, n2.value);
+            _add(n1, n2, result, maxWords(n1, n2));
         }
         else if (n1.negative)
         {
             // n1 is negative, n2 is positive
-            result.value = _sub(n2.value, n1.value);
+            _sub(n2, n1, result);
             if (compareAbs(n1, n2) == 1)
             {
                 result.negative = 1;
@@ -129,7 +128,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
-            result.value = _sub(n1.value, n2.value);
+            _sub(n1, n2, result);
             if (compareAbs(n1, n2) == -1)
             {
                 result.negative = 1;
@@ -139,7 +138,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 and n2 are positive
             result.negative = 0;
-            result.value = _add(n1.value, n2.value);
+            _add(n1, n2, result);
         }
         break;
     case '-':
@@ -147,7 +146,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
-            result.value = _sub(n2.value, n1.value);
+            _sub(n2, n1, result);
             if (compareAbs(n1, n2) == 1)
             {
                 result.negative = 1;
@@ -157,18 +156,18 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 is negative, n2 is positive
             result.negative = 1;
-            result.value = _add(n1.value, n2.value);
+            _add(n1, n2, result);
         }
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
             result.negative = 0;
-            result.value = _add(n1.value, n2.value);
+            _add(n1, n2, result);
         }
         else
         {
             // n1 and n2 are positive
-            result.value = _sub(n1.value, n2.value);
+            _sub(n1, n2, result);
             if (compareAbs(n1, n2) == -1)
             {
                 result.negative = 1;
@@ -177,11 +176,11 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         break;
     case '*':
         result.negative = n1.negative & n2.negative;
-        result.value = _mul(n1.value, n2.value);
+        _mul(n1, n2, result);
         break;
     case '/':
         result.negative = n1.negative & n2.negative;
-        result.value = _div(n1.value, n2.value);
+        _div(n1, n2, result);
         break;
     }
     return result;
