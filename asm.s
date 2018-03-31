@@ -121,30 +121,62 @@ _sub:
         ret
 
 _mul:
-    ; push rbp
+    push rbp
     
-    ; mov al, [rdi]
-    ; mov byte [rdx], al              ; Adding lowest order byte of n1
-    ; mov bl, [rsi]
-    ; add byte [rdx], bl              ; Adding lowest order byte of n2
-    ; dec rcx
-    ; cmp rcx, 0
-    ; je .done
+    mov r9, 0                            ; Init outerLoop index
+    mov r10, 0                           ; Init innerLoop index
+    mov r13, rsi
 
-    ; .next:
-    ;     inc rdi
-    ;     inc rsi
-    ;     inc rdx
-    ;     mov al, [rdi]
-    ;     mov byte [rdx], al          ; Adding next byte of n1
-    ;     mov bl, [rsi]
-    ;     adc byte [rsi], bl          ; Adding next byte of n2
-    ;     loop .next, rcx
+    outerLoop:
+        mov al, [rdi]
+        mov r11, rdx                     ; Saving result array
+        innerLoop:
+            mov bl, [rsi]
+            mul bl                       ; Adding lowest order byte of n2
+            push rsi
+            push rbx
+            push rcx
+            push rdi
+            push rdx
+            push rax
+            mov rdi, r11
+            mov sil, al
+            mov rdx, r8                 ; Sending the number of cells left in the array
+            add rdx, rcx                ; -"-
+            sub rdx, r9                 ; -"-
+            sub rdx, r10                ; -"-
+            dec rdx                     ; -"-
+            mov r12, rdx
+            call addRecursively         ; Adding the lower order carry to the higher order bytes
+            mov rdi, r11
+            inc rdi
+            pop rax
+            mov al, ah
+            mov sil, al                 ; Sending the multiplication carry
+            mov rdx, r12                ; Sending the number of cells left in the array
+            dec rdx
+            call addRecursively         ; Adding the multiplication carry to the higher order bytes
+            pop rdx
+            pop rdi
+            pop rcx
+            pop rbx
+            pop rsi
+            inc rsi
+            inc r10                     ; Incrementing innerLoop index
+            inc r11                     ; Moving to the next result cell
+            mov al, [rdi]
+            cmp r10, r8
+            jne innerLoop
+            mov r10, 0
+            mov rsi, r13                ; Restoring the currect n2 cell
+            inc rdi
+            inc rdx                     ; Restoring the currect result cell
+            inc r9
+            cmp r9, rcx
+            jne outerLoop
     
-    ; .done:
-    ;     adc byte [rdx+1], 0              ; Add carry to highest order byte if exists
-    ;     pop rbp
-    ;     ret
+    pop rbp
+    ret
 
 _div:
     ; push rbp

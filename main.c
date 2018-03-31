@@ -21,7 +21,7 @@ extern char mulByTen(char *value);
 extern char addRecursively(char *value, short toAdd, long loopCounter);
 extern void _add(char *n1, char *n2, char *result, long min, long max);
 extern void _sub(char *n1, char *n2, char *result, long min, long max);
-extern void _mul(char *n1, char *n2, char *result, long min);
+extern void _mul(char *n1, char *n2, char *result, long num1, long num2);
 extern void _div(char *n1, char *n2, char *result, long min);
 
 void printBignum(Bignum *n)
@@ -222,8 +222,8 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         }
         break;
     case '*':
-        result.negative = n1.negative & n2.negative;
-        _mul(n1.value, n2.value, result.value, result.numOfQwords);
+        result.negative = n1.negative != n2.negative;
+        _mul(n1.value, n2.value, result.value, n1.numOfQwords, n2.numOfQwords);
         break;
     case '/':
         result.negative = n1.negative & n2.negative;
