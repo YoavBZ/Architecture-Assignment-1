@@ -147,7 +147,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
             // n1 is negative, n2 is positive
             if (compareAbs(n1, n2) == 1)
             {
-                _sub(n1.value, n2.value, result.value, minNum, maxNum);                
+                _sub(n1.value, n2.value, result.value, minNum, maxNum);
                 result.negative = 1;
             }
             else
@@ -160,7 +160,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
             // n1 is positive, n2 is negative
             if (compareAbs(n2, n1) == 1)
             {
-                _sub(n2.value, n1.value, result.value, minNum, maxNum);                
+                _sub(n2.value, n1.value, result.value, minNum, maxNum);
                 result.negative = 1;
             }
             else
@@ -181,31 +181,43 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
-            _sub(n2.value, n1.value, result.value, minNum, maxNum);
             if (compareAbs(n1, n2) == 1)
             {
+                _sub(n1.value, n2.value, result.value, minNum, maxNum);
                 result.negative = 1;
+            }
+            else
+            {
+                _sub(n2.value, n1.value, result.value, minNum, maxNum);
             }
         }
         else if (n1.negative)
         {
             // n1 is negative, n2 is positive
             result.negative = 1;
-            _add(n1.value, n2.value, result.value, minNum, maxNum);
+            Bignum bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
+            _add(bigger.value, smaller.value, result.value, minNum, maxNum);
         }
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
             result.negative = 0;
-            _add(n1.value, n2.value, result.value, minNum, maxNum);
+            Bignum bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
+            _add(bigger.value, smaller.value, result.value, minNum, maxNum);
         }
         else
         {
             // n1 and n2 are positive
-            _sub(n1.value, n2.value, result.value, minNum, maxNum);
-            if (compareAbs(n1, n2) == -1)
+            if (compareAbs(n2, n1) == 1)
             {
+                _sub(n2.value, n1.value, result.value, minNum, maxNum);
                 result.negative = 1;
+            }
+            else
+            {
+                _sub(n1.value, n2.value, result.value, minNum, maxNum);
             }
         }
         break;
