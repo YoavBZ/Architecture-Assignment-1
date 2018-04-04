@@ -88,6 +88,24 @@ char compareAbs(Bignum n1, Bignum n2)
     return 0;
 }
 
+char compare(char* n1val, char* n2val, long n1,long n2)
+{
+    if (n1 > n2)
+    {
+        return 1;
+    }
+    else if (n1 < n2)
+    {
+        return -1;
+    }
+    for (int i = n1 - 1; i >= 0; i--)
+    {
+        if (n1val[i] != n2val[i])
+            return n1val[i] > n2val[i] ? 1 : -1;
+    }
+    return 0;
+}
+
 void mulByTenRecursively(Bignum *n)
 {
     char next = 0;
@@ -116,6 +134,20 @@ Bignum trimBignum(Bignum n)
         n.value = realloc(n.value, n.numOfQwords);
     }
     return n;
+}
+
+int trim(char* n, int numOfQwords)
+{
+    
+    for (int i = numOfQwords - 1; i >= 0; i--)
+    {
+        if (n[i] == 0)
+        {
+            numOfQwords--;
+        }
+    }
+   
+    return numOfQwords;
 }
 
 long min(long x, long y)

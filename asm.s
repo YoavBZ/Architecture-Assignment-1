@@ -179,27 +179,63 @@ _mul:
     ret
 
 _div:
-    ; push rbp
+    push rbp
     
-    ; mov al, [rdi]
-    ; mov byte [rdx], al              ; Adding lowest order byte of n1
-    ; mov bl, [rsi]
-    ; add byte [rdx], bl              ; Adding lowest order byte of n2
-    ; dec rcx
-    ; cmp rcx, 0
-    ; je .done
+    call compare
+    cmp rax, -1
+    mov rax, 0
+    je .done
 
-    ; .next:
-    ;     inc rdi
-    ;     inc rsi
-    ;     inc rdx
-    ;     mov al, [rdi]
-    ;     mov byte [rdx], al          ; Adding next byte of n1
-    ;     mov bl, [rsi]
-    ;     adc byte [rsi], bl          ; Adding next byte of n2
-    ;     loop .next, rcx
-    
-    ; .done:
-    ;     adc byte [rdx+1], 0              ; Add carry to highest order byte if exists
-    ;     pop rbp
-    ;     ret
+    .loop:
+        push rdx
+        push rcx
+        push r8
+        mov r8, rcx
+        mov rcx, rdx
+        call _sub
+        mov rdi, rdx
+        inc rax
+        pop r8
+        pop rcx
+        pop rdx
+        push rax
+        push rsi
+        mov rsi, rdx
+        call trim
+        mov rdx, rax
+        pop rsi
+        call compare
+        cmp rax, -1
+        pop rax
+        jne .loop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    push rdx
+    push rcx
+    mov rdx,r8
+    mov rcx,r9
+    call compare
+    pop rcx
+    pop rdx
+    cmp rax, -1
+    je .done
+    mov rdi,rdx
+    mov rsi,rcx
+    call _add
+
+    .done:
+        pop rbp
+        ret
