@@ -183,7 +183,6 @@ _div:
     
     call compare
     cmp rax, -1
-    mov rax, 0
     je .done
 
     .loop:
@@ -192,9 +191,10 @@ _div:
         push r8
         mov r8, rcx
         mov rcx, rdx
+        mov rdx, 0
         call _sub
         mov rdi, rdx
-        inc rax
+        inc rax                         ; Add 1 to result
         pop r8
         pop rcx
         pop rdx
