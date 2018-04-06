@@ -4,8 +4,8 @@
 
 typedef struct Bignum
 {
-    char *value;
     long numOfQwords;
+    char *value;
     char negative;
 } Bignum;
 
@@ -22,7 +22,9 @@ extern char addRecursively(char *value, short toAdd, long loopCounter);
 extern void _add(char *n1, char *n2, char *result, long min, long max);
 extern void _sub(char *n1, char *n2, char *result, long min, long max);
 extern void _mul(char *n1, char *n2, char *result, long num1, long num2);
-extern void _div(char *n1, char *n2, char *result, long min);
+extern void _div(Bignum *n1, Bignum *n2, Bignum *result, Bignum *factor);
+extern void mulByTwo(Bignum *n);
+// extern void _div(char *n1, char *n2, char *result, long min);
 
 void printBignum(Bignum *n)
 {
@@ -70,38 +72,20 @@ char max(long x, long y)
 }
 
 // Return 1 if |n1|>|n2|, -1 if |n1|<|n2|, and 0 if there're equal
-char compareAbs(Bignum n1, Bignum n2)
+char compareAbs(Bignum *n1, Bignum *n2)
 {
-    if (n1.numOfQwords > n2.numOfQwords)
+    if (n1->numOfQwords > n2->numOfQwords)
     {
         return 1;
     }
-    else if (n1.numOfQwords < n2.numOfQwords)
+    else if (n1->numOfQwords < n2->numOfQwords)
     {
         return -1;
     }
-    for (int i = n1.numOfQwords - 1; i >= 0; i--)
+    for (int i = n1->numOfQwords - 1; i >= 0; i--)
     {
-        if (n1.value[i] != n2.value[i])
-            return n1.value[i] > n2.value[i] ? 1 : -1;
-    }
-    return 0;
-}
-
-char compare(char* n1val, char* n2val, long n1,long n2)
-{
-    if (n1 > n2)
-    {
-        return 1;
-    }
-    else if (n1 < n2)
-    {
-        return -1;
-    }
-    for (int i = n1 - 1; i >= 0; i--)
-    {
-        if (n1val[i] != n2val[i])
-            return n1val[i] > n2val[i] ? 1 : -1;
+        if (n1->value[i] != n2->value[i])
+            return n1->value[i] > n2->value[i] ? 1 : -1;
     }
     return 0;
 }
@@ -119,35 +103,20 @@ void mulByTenRecursively(Bignum *n)
     }
 }
 
-Bignum trimBignum(Bignum n)
+void trimBignum(Bignum *n)
 {
-    long originalNum = n.numOfQwords;
-    for (int i = n.numOfQwords - 1; i >= 0; i--)
+    long originalNum = n->numOfQwords;
+    for (int i = n->numOfQwords - 1; i >= 0; i--)
     {
-        if (n.value[i] == 0)
+        if (n->value[i] == 0)
         {
-            n.numOfQwords--;
+            n->numOfQwords--;
         }
     }
-    if (originalNum != n.numOfQwords)
+    if (originalNum != n->numOfQwords)
     {
-        n.value = realloc(n.value, n.numOfQwords);
+        n->value = realloc(n->value, n->numOfQwords);
     }
-    return n;
-}
-
-int trim(char* n, int numOfQwords)
-{
-    
-    for (int i = numOfQwords - 1; i >= 0; i--)
-    {
-        if (n[i] == 0)
-        {
-            numOfQwords--;
-        }
-    }
-   
-    return numOfQwords;
 }
 
 long min(long x, long y)
@@ -170,14 +139,14 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 and n2 are negative
             result.negative = 1;
-            Bignum bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
             Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
             _add(bigger.value, smaller.value, result.value, minNum, maxNum);
         }
         else if (n1.negative)
         {
             // n1 is negative, n2 is positive
-            if (compareAbs(n1, n2) == 1)
+            if (compareAbs(&n1, &n2) == 1)
             {
                 _sub(n1.value, n2.value, result.value, minNum, maxNum);
                 result.negative = 1;
@@ -190,7 +159,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         else if (n2.negative)
         {
             // n1 is positive, n2 is negative
-            if (compareAbs(n2, n1) == 1)
+            if (compareAbs(&n2, &n1) == 1)
             {
                 _sub(n2.value, n1.value, result.value, minNum, maxNum);
                 result.negative = 1;
@@ -204,7 +173,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 and n2 are positive
             result.negative = 0;
-            Bignum bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
             Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
             _add(bigger.value, smaller.value, result.value, minNum, maxNum);
         }
@@ -213,7 +182,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         if (n1.negative && n2.negative)
         {
             // n1 and n2 are negative
-            if (compareAbs(n1, n2) == 1)
+            if (compareAbs(&n1, &n2) == 1)
             {
                 _sub(n1.value, n2.value, result.value, minNum, maxNum);
                 result.negative = 1;
@@ -227,7 +196,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 is negative, n2 is positive
             result.negative = 1;
-            Bignum bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
             Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
             _add(bigger.value, smaller.value, result.value, minNum, maxNum);
         }
@@ -235,14 +204,14 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         {
             // n1 is positive, n2 is negative
             result.negative = 0;
-            Bignum bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
             Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
             _add(bigger.value, smaller.value, result.value, minNum, maxNum);
         }
         else
         {
             // n1 and n2 are positive
-            if (compareAbs(n2, n1) == 1)
+            if (compareAbs(&n2, &n1) == 1)
             {
                 _sub(n2.value, n1.value, result.value, minNum, maxNum);
                 result.negative = 1;
@@ -259,10 +228,16 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         break;
     case '/':
         result.negative = n1.negative & n2.negative;
-        _div(n1.value, n2.value, result.value, result.numOfQwords);
+        Bignum factor;
+        factor.negative = 0;
+        factor.numOfQwords = 1;
+        factor.value = malloc(1);
+        _div(&n1, &n2, &result, &factor);
+        free(factor.value);
         break;
     }
-    return trimBignum(result);
+    trimBignum(&result);
+    return result;
 }
 
 int main(int argc, char **argv)

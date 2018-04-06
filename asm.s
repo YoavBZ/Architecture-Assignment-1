@@ -1,5 +1,6 @@
 section .text
 global mulByTen, addRecursively, _add, _sub, _mul, _div
+extern compareAbs, trimBignum, realloc
 
 mulByTen:
     push rbp
@@ -178,64 +179,185 @@ _mul:
     pop rbp
     ret
 
-_div:
+
+
+
+
+_div2:
     push rbp
-    
-    call compare
-    cmp rax, -1
+
+    push rdi
+    push rcx
+    mov rdi,rcx
+    call mulByTwo               ; Multiplying factor by 2
+    mov rdi,rsi
+    call mulByTwo               ; Multiplying n2 by 2
+    pop rcx
+    pop rdi
+    call _div2
+    call compareAbs
+    cmp al, -1
     je .done
-
-    .loop:
-        push rdx
-        push rcx
-        push r8
-        mov r8, rcx
-        mov rcx, rdx
-        mov rdx, 0
-        call _sub
-        mov rdi, rdx
-        inc rax                         ; Add 1 to result
-        pop r8
-        pop rcx
-        pop rdx
-        push rax
-        push rsi
-        mov rsi, rdx
-        call trim
-        mov rdx, rax
-        pop rsi
-        call compare
-        cmp rax, -1
-        pop rax
-        jne .loop
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    push rdi
+    push rsi
     push rdx
     push rcx
-    mov rdx,r8
-    mov rcx,r9
-    call compare
+    mov rcx, [rsi]
+    mov r8, [rdi]
+    mov rdi, [rdi+8]            ; Preparing arguments for _sub
+    mov rsi, [rsi+8]
+    mov rdx, rdi
+    call _sub
     pop rcx
     pop rdx
-    cmp rax, -1
-    je .done
+    pop rsi
+    pop rdi
+    call trimBignum
+    push rdi
+    push rsi
+    mov rdi, [rdx+8]            ; Getting result.value
+    mov rsi, [rdx]              ; Getting result.numOfBytes
+    add rsi,[rcx]               ; Adding factor.numOfBytes
+    call realloc                ; Reallocating factor Bignum
+    mov [rdx+8],rax
+    mov r8,[rcx]
+    add [rdx], r8
+    push rcx
+    push rdx
+    mov r8, [rdx]
+    mov rdi, [rdx+8]            ; Preparing arguments for _add
+    mov rsi, [rcx+8]
+    mov rcx, [rcx]
+    mov rdx,rdi
+    call _add                   ; adding factor to result
+    pop rdx
     mov rdi,rdx
-    mov rsi,rcx
-    call _add
+    call trimBignum
+    pop rcx
+    pop rsi
+    pop rdi
 
     .done:
+        push rdi
+        push rcx
+        mov rdi,rcx
+        call divByTwo               ; Dividing factor by 2
+        mov rdi,rsi
+        call divByTwo               ; Dividing n2 by 2
+        pop rcx
+        pop rdi
+
+        pop rbp
+        ret
+
+_div:
+    push rbp
+    mov rax,[rcx+8]
+    mov byte [rax],1
+    call _div2
+    call compareAbs
+    cmp al, -1
+    je .done
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    mov rcx, [rsi]
+    mov r8, [rdi]
+    mov rdi, [rdi+8]            ; Preparing arguments for _sub
+    mov rsi, [rsi+8]
+    mov rdx, rdi
+    call _sub
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    call trimBignum
+    push rdi
+    push rsi
+    mov rdi, [rdx+8]            ; Getting result.value
+    mov rsi, [rdx]              ; Getting result.numOfBytes
+    add rsi,[rcx]               ; Adding factor.numOfBytes
+    call realloc                ; Reallocating factor Bignum
+    mov [rdx+8],rax
+    mov r8, [rcx]
+    add [rdx], r8
+    push rcx
+    push rdx
+    mov r8, [rdx]
+    mov rdi, [rdx+8]            ; Preparing arguments for _add
+    mov rsi, [rcx+8]
+    mov rcx, [rcx]
+    mov rdx,rdi
+    call _add                   ; adding factor to result
+    pop rdx
+    mov rdi,rdx
+    call trimBignum
+    pop rcx
+    pop rsi
+    pop rdi
+
+    .done:
+        pop rbp
+        ret
+
+mulByTwo:
+    push rbp
+
+    mov rax, [rdi+8]                ; Getting pointer to the Bignum value
+    mov rcx, [rdi]                  ; Getting numOfBytes
+    mov rbx, 0
+    dec rcx
+    cmp rcx, 0
+    jne .shifting
+
+    .shiftOneByte:
+        shl byte [rax], 1           ; Shifting the only byte
+        jmp .extendBignum
+
+    .shifting:
+        shl byte [rax], 1           ; Shifting the highest order byte
+        .loop:
+            inc rbx
+            rcl byte [rax+rbx], 1
+            loop .loop, rcx         ; Moving pointer 1 byte lower
+
+        .extendBignum:              ; Reallocate value if CF=1
+            jnc .done
+            push rdi
+            mov rdi, [rdi+8]
+            add rbx, 2
+            mov rsi, rbx
+            call realloc
+            pop rdi
+            mov [rdi+8], rax
+            inc byte [rax+rbx-1]    ; Adding carry to the new highest order byte
+            inc qword [rdi]         ; Incrementing numOfBytes
+    
+    .done:
+        pop rbp
+        ret
+
+divByTwo:
+    push rbp
+
+    mov rax, [rdi+8]            ; Getting pointer to the Bignum value
+    mov rcx, [rdi]              ; Getting numOfBytes
+    dec rcx
+    cmp rcx, 0
+    jne .shifting
+
+    .shiftOneByte:
+        shr byte [rax], 1       ; Shifting the only byte
+        jmp .done
+
+    .shifting:
+        shr byte [rax+rcx], 1   ; Shifting the highest order byte
+        .loop:
+            rcr byte [rax+rcx-1], 1
+            loop .loop, rcx         ; Moving pointer 1 byte lower
+
+    .done:
+        call trimBignum
         pop rbp
         ret
