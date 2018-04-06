@@ -25,11 +25,47 @@ extern void _mul(unsigned char *n1, unsigned char *n2, unsigned char *result, lo
 extern void _div(Bignum *n1, Bignum *n2, Bignum *result, Bignum *factor);
 extern void mulByTwo(Bignum *n);
 
-void printBignum(Bignum *n)
+void trimBignum(Bignum *n)
 {
-    // for (int i = 0; i < n->number_of_digits; i++)
-    // putchar(n->digits[i]);
-    putchar('\n');
+    long originalNum = n->numOfQwords;
+    for (int i = n->numOfQwords - 1; i > 0; i--)
+    {
+        if (n->value[i] == 0)
+        {
+            n->numOfQwords--;
+        }
+    }
+    if (originalNum != n->numOfQwords)
+    {
+        n->value = realloc(n->value, n->numOfQwords);
+    }
+}
+
+void printBignum(Bignum n)
+{
+    Bignum toPrint, divisor, factor;
+    toPrint.numOfQwords = n.numOfQwords;
+    toPrint.value = malloc(toPrint.numOfQwords);
+    divisor.numOfQwords = 1;
+    divisor.value = malloc(1);
+    divisor.value[0] = 10;
+    factor.numOfQwords = 1;
+    factor.value = malloc(1);
+    
+    if(n.negative){
+        putchar('-');
+    }
+
+    putchar(n.value[0] % 10);
+    _div(&n, &divisor, &toPrint, &factor);
+    
+    while(toPrint.numOfQwords != 1 && toPrint.value[0] != 0)
+    {
+        putchar(toPrint.value[0] % 10);
+        _div(&toPrint, &divisor, &toPrint, &factor);
+        trimBignum(&toPrint);
+    }
+    free(toPrint.value);
 }
 
 void push(Bignum n)
@@ -44,7 +80,7 @@ Bignum pop()
 
 Bignum peak()
 {
-    return s.stack[s.size];
+    return s.stack[s.size - 1];
 }
 
 void freeStack()
@@ -102,21 +138,7 @@ void mulByTenRecursively(Bignum *n)
     }
 }
 
-void trimBignum(Bignum *n)
-{
-    long originalNum = n->numOfQwords;
-    for (int i = n->numOfQwords - 1; i > 0; i--)
-    {
-        if (n->value[i] == 0)
-        {
-            n->numOfQwords--;
-        }
-    }
-    if (originalNum != n->numOfQwords)
-    {
-        n->value = realloc(n->value, n->numOfQwords);
-    }
-}
+
 
 long min(long x, long y)
 {
@@ -292,7 +314,7 @@ int main(int argc, char **argv)
             break;
 
         case 'p':
-            // printBignum(peak(s));
+            printBignum(peak());
             break;
         }
     }

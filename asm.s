@@ -331,13 +331,13 @@ _div:
     pop rcx
     push rdi
     push rsi
-    mov rdi, [rdx+8]            ; Getting result.value
-    mov rsi, [rdx]              ; Getting result.numOfBytes
-    add rsi,[rcx]               ; Adding factor.numOfBytes
-    call realloc                ; Reallocating factor Bignum
-    mov [rdx+8],rax
-    mov r8, [rcx]
-    add [rdx], r8
+    ; mov rdi, [rdx+8]            ; Getting result.value
+    ; mov rsi, [rdx]              ; Getting result.numOfBytes
+    ; add rsi,[rcx]               ; Adding factor.numOfBytes
+    ; call realloc                ; Reallocating factor Bignum
+    ; mov [rdx+8],rax
+    ; mov r8, [rcx]
+    ; add [rdx], r8
     push rcx
     push rdx
     mov r8, [rdx]
@@ -346,10 +346,10 @@ _div:
     mov rcx, [rcx]
     mov rdx,rdi
     call _add                   ; adding factor to result
-    pop rdx
-    mov rdi,rdx
-    push rdx
-    call trimBignum
+    ; pop rdx
+    ; mov rdi,rdx
+    ; push rdx
+    ; call trimBignum
     pop rdx
     pop rcx
     pop rsi
