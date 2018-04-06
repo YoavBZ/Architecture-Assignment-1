@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 
 typedef struct Bignum
 {
@@ -23,7 +22,6 @@ extern void _add(unsigned char *n1, unsigned char *n2, unsigned char *result, lo
 extern void _sub(unsigned char *n1, unsigned char *n2, unsigned char *result, long min, long max);
 extern void _mul(unsigned char *n1, unsigned char *n2, unsigned char *result, long num1, long num2);
 extern void _div(Bignum *n1, Bignum *n2, Bignum *result, Bignum *factor);
-extern void mulByTwo(Bignum *n);
 
 void trimBignum(Bignum *n)
 {
@@ -45,27 +43,29 @@ void printBignum(Bignum n)
 {
     Bignum toPrint, divisor, factor;
     toPrint.numOfQwords = n.numOfQwords;
-    toPrint.value = malloc(toPrint.numOfQwords);
+    toPrint.value = calloc(toPrint.numOfQwords, 1);
     divisor.numOfQwords = 1;
-    divisor.value = malloc(1);
+    divisor.value = calloc(1, 1);
     divisor.value[0] = 10;
     factor.numOfQwords = 1;
-    factor.value = malloc(1);
-    
-    if(n.negative){
+    factor.value = calloc(1, 1);
+
+    if (n.negative)
+    {
         putchar('-');
     }
-
     putchar(n.value[0] % 10);
     _div(&n, &divisor, &toPrint, &factor);
-    
-    while(toPrint.numOfQwords != 1 && toPrint.value[0] != 0)
+
+    while (toPrint.numOfQwords != 1 && toPrint.value[0] != 0)
     {
         putchar(toPrint.value[0] % 10);
         _div(&toPrint, &divisor, &toPrint, &factor);
         trimBignum(&toPrint);
     }
     free(toPrint.value);
+    free(factor.value);
+    free(divisor.value);
 }
 
 void push(Bignum n)
@@ -93,7 +93,7 @@ void freeStack()
 
 void addQwordIfNeeded(Bignum *n, unsigned char next)
 {
-    if (next)
+    if (next > 0)
     {
         n->numOfQwords++;
         n->value = realloc(n->value, n->numOfQwords);
@@ -138,8 +138,6 @@ void mulByTenRecursively(Bignum *n)
     }
 }
 
-
-
 long min(long x, long y)
 {
     return x < y ? x : y;
@@ -150,7 +148,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
     Bignum result;
     result.numOfQwords = n1.numOfQwords + n2.numOfQwords;
     result.negative = 0;
-    result.value = malloc(result.numOfQwords);
+    result.value = calloc(result.numOfQwords, 1);
     long minNum = min(n1.numOfQwords, n2.numOfQwords);
     long maxNum = max(n1.numOfQwords, n2.numOfQwords);
     switch (op)
@@ -252,7 +250,7 @@ Bignum operate(Bignum n1, Bignum n2, char op)
         Bignum factor;
         factor.negative = 0;
         factor.numOfQwords = 1;
-        factor.value = malloc(1);
+        factor.value = calloc(1, 1);
         _div(&n1, &n2, &result, &factor);
         free(factor.value);
         break;
@@ -267,7 +265,7 @@ int main(int argc, char **argv)
     s.size = 0;
     Bignum n;
     n.numOfQwords = 0;
-    n.value = malloc(1);
+    n.negative = 0;
     unsigned char next = 0;
     int c = 0;
     while ((c = fgetc(stdin)) != 'q')
@@ -278,7 +276,7 @@ int main(int argc, char **argv)
             if (n.numOfQwords == 0)
             {
                 n.numOfQwords = 1;
-                n.value = malloc(1);
+                n.value = calloc(1, 1);
             }
             mulByTenRecursively(&n);
             next = addRecursively(n.value, c - '0', n.numOfQwords - 1);
@@ -311,6 +309,15 @@ int main(int argc, char **argv)
             push(operate(n1, n2, c));
             free(n1.value);
             free(n2.value);
+            break;
+
+        case 'c':
+            freeStack();
+            for (int i = 0; i < s.size; i++)
+            {
+                s.stack[i].numOfQwords = 0;
+                s.stack[i].negative = 0;
+            }
             break;
 
         case 'p':
