@@ -5,7 +5,7 @@
 typedef struct Bignum
 {
     long numOfQwords;
-    char *value;
+    unsigned char *value;
     char negative;
 } Bignum;
 
@@ -17,14 +17,13 @@ typedef struct Stack
 
 Stack s;
 
-extern char mulByTen(char *value);
-extern char addRecursively(char *value, short toAdd, long loopCounter);
-extern void _add(char *n1, char *n2, char *result, long min, long max);
-extern void _sub(char *n1, char *n2, char *result, long min, long max);
-extern void _mul(char *n1, char *n2, char *result, long num1, long num2);
+extern unsigned char mulByTen(unsigned char *value);
+extern unsigned char addRecursively(unsigned char *value, short toAdd, long loopCounter);
+extern void _add(unsigned char *n1, unsigned char *n2, unsigned char *result, long min, long max);
+extern void _sub(unsigned char *n1, unsigned char *n2, unsigned char *result, long min, long max);
+extern void _mul(unsigned char *n1, unsigned char *n2, unsigned char *result, long num1, long num2);
 extern void _div(Bignum *n1, Bignum *n2, Bignum *result, Bignum *factor);
 extern void mulByTwo(Bignum *n);
-// extern void _div(char *n1, char *n2, char *result, long min);
 
 void printBignum(Bignum *n)
 {
@@ -56,7 +55,7 @@ void freeStack()
     }
 }
 
-void addQwordIfNeeded(Bignum *n, char next)
+void addQwordIfNeeded(Bignum *n, unsigned char next)
 {
     if (next)
     {
@@ -66,7 +65,7 @@ void addQwordIfNeeded(Bignum *n, char next)
     }
 }
 
-char max(long x, long y)
+long max(long x, long y)
 {
     return x > y ? x : y;
 }
@@ -92,7 +91,7 @@ char compareAbs(Bignum *n1, Bignum *n2)
 
 void mulByTenRecursively(Bignum *n)
 {
-    char next = 0;
+    unsigned char next = 0;
     next = mulByTen(&(n->value[n->numOfQwords - 1]));
     int i = n->numOfQwords - 2;
     addQwordIfNeeded(n, next);
@@ -106,7 +105,7 @@ void mulByTenRecursively(Bignum *n)
 void trimBignum(Bignum *n)
 {
     long originalNum = n->numOfQwords;
-    for (int i = n->numOfQwords - 1; i >= 0; i--)
+    for (int i = n->numOfQwords - 1; i > 0; i--)
     {
         if (n->value[i] == 0)
         {
@@ -247,7 +246,7 @@ int main(int argc, char **argv)
     Bignum n;
     n.numOfQwords = 0;
     n.value = malloc(1);
-    char next = 0;
+    unsigned char next = 0;
     int c = 0;
     while ((c = fgetc(stdin)) != 'q')
     {

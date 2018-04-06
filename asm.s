@@ -185,18 +185,40 @@ _mul:
 
 _div2:
     push rbp
-
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    call compareAbs
+    cmp al, -1
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    je .done
     push rdi
     push rcx
+    push rsi
+    push rdx
     mov rdi,rcx
     call mulByTwo               ; Multiplying factor by 2
     mov rdi,rsi
     call mulByTwo               ; Multiplying n2 by 2
+    pop rdx
+    pop rsi
     pop rcx
     pop rdi
     call _div2
+    push rdi
+    push rsi
+    push rdx
+    push rcx
     call compareAbs
     cmp al, -1
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
     je .done
     push rdi
     push rsi
@@ -212,13 +234,25 @@ _div2:
     pop rdx
     pop rsi
     pop rdi
-    call trimBignum
     push rdi
     push rsi
+    push rdx
+    push rcx
+    call trimBignum
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    push rdi
+    push rsi
+    push rcx
+    push rdx
     mov rdi, [rdx+8]            ; Getting result.value
     mov rsi, [rdx]              ; Getting result.numOfBytes
     add rsi,[rcx]               ; Adding factor.numOfBytes
-    call realloc                ; Reallocating factor Bignum
+    call realloc 
+    pop rdx
+    pop rcx               ; Reallocating factor Bignum
     mov [rdx+8],rax
     mov r8,[rcx]
     add [rdx], r8
@@ -232,7 +266,9 @@ _div2:
     call _add                   ; adding factor to result
     pop rdx
     mov rdi,rdx
+    push rdx
     call trimBignum
+    pop rdx
     pop rcx
     pop rsi
     pop rdi
@@ -240,10 +276,14 @@ _div2:
     .done:
         push rdi
         push rcx
+        push rsi
+        push rdx
         mov rdi,rcx
         call divByTwo               ; Dividing factor by 2
         mov rdi,rsi
         call divByTwo               ; Dividing n2 by 2
+        pop rdx
+        pop rsi
         pop rcx
         pop rdi
 
@@ -252,11 +292,19 @@ _div2:
 
 _div:
     push rbp
-    mov rax,[rcx+8]
+    mov rax,[rcx+8]             ; Getting n1 value
     mov byte [rax],1
     call _div2
+    push rcx
+    push rdx
+    push rdi
+    push rsi
     call compareAbs
     cmp al, -1
+    pop rsi
+    pop rdi
+    pop rdx
+    pop rcx
     je .done
     push rdi
     push rsi
@@ -272,7 +320,15 @@ _div:
     pop rdx
     pop rsi
     pop rdi
+    push rcx
+    push rdx
+    push rdi
+    push rsi
     call trimBignum
+    pop rsi
+    pop rdi
+    pop rdx
+    pop rcx
     push rdi
     push rsi
     mov rdi, [rdx+8]            ; Getting result.value
@@ -292,7 +348,9 @@ _div:
     call _add                   ; adding factor to result
     pop rdx
     mov rdi,rdx
+    push rdx
     call trimBignum
+    pop rdx
     pop rcx
     pop rsi
     pop rdi
@@ -328,7 +386,15 @@ mulByTwo:
             mov rdi, [rdi+8]
             add rbx, 2
             mov rsi, rbx
+            push rax
+            push rbx
+            push rdi
+            push rcx
             call realloc
+            pop rcx
+            pop rdi
+            pop rbx
+            pop rax
             pop rdi
             mov [rdi+8], rax
             inc byte [rax+rbx-1]    ; Adding carry to the new highest order byte
@@ -358,6 +424,12 @@ divByTwo:
             loop .loop, rcx         ; Moving pointer 1 byte lower
 
     .done:
+        push rax
+        push rdi
+        push rcx
         call trimBignum
+        pop rcx
+        pop rdi
+        pop rax
         pop rbp
         ret
