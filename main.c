@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct Bignum
 {
-    long numOfQwords;
+    long numOfBytes;
     unsigned char *value;
     char negative;
 } Bignum;
@@ -25,47 +26,22 @@ extern void _div(Bignum *n1, Bignum *n2, Bignum *result, Bignum *factor);
 
 void trimBignum(Bignum *n)
 {
-    long originalNum = n->numOfQwords;
-    for (int i = n->numOfQwords - 1; i > 0; i--)
+    long originalNum = n->numOfBytes;
+    for (int i = n->numOfBytes - 1; i > 0; i--)
     {
         if (n->value[i] == 0)
         {
-            n->numOfQwords--;
+            n->numOfBytes--;
+        }
+        else
+        {
+            break;
         }
     }
-    if (originalNum != n->numOfQwords)
+    if (originalNum != n->numOfBytes)
     {
-        n->value = realloc(n->value, n->numOfQwords);
+        n->value = realloc(n->value, n->numOfBytes);
     }
-}
-
-void printBignum(Bignum n)
-{
-    Bignum toPrint, divisor, factor;
-    toPrint.numOfQwords = n.numOfQwords;
-    toPrint.value = calloc(toPrint.numOfQwords, 1);
-    divisor.numOfQwords = 1;
-    divisor.value = calloc(1, 1);
-    divisor.value[0] = 10;
-    factor.numOfQwords = 1;
-    factor.value = calloc(1, 1);
-
-    if (n.negative)
-    {
-        putchar('-');
-    }
-    putchar(n.value[0] % 10);
-    _div(&n, &divisor, &toPrint, &factor);
-
-    while (toPrint.numOfQwords != 1 && toPrint.value[0] != 0)
-    {
-        putchar(toPrint.value[0] % 10);
-        _div(&toPrint, &divisor, &toPrint, &factor);
-        trimBignum(&toPrint);
-    }
-    free(toPrint.value);
-    free(factor.value);
-    free(divisor.value);
 }
 
 void push(Bignum n)
@@ -89,15 +65,16 @@ void freeStack()
     {
         free(s.stack[i].value);
     }
+    s.size = 0;
 }
 
-void addQwordIfNeeded(Bignum *n, unsigned char next)
+void addByteIfNeeded(Bignum *n, unsigned char next)
 {
     if (next > 0)
     {
-        n->numOfQwords++;
-        n->value = realloc(n->value, n->numOfQwords);
-        n->value[n->numOfQwords - 1] = next;
+        n->numOfBytes++;
+        n->value = realloc(n->value, n->numOfBytes);
+        n->value[n->numOfBytes - 1] = next;
     }
 }
 
@@ -109,15 +86,15 @@ long max(long x, long y)
 // Return 1 if |n1|>|n2|, -1 if |n1|<|n2|, and 0 if there're equal
 char compareAbs(Bignum *n1, Bignum *n2)
 {
-    if (n1->numOfQwords > n2->numOfQwords)
+    if (n1->numOfBytes > n2->numOfBytes)
     {
         return 1;
     }
-    else if (n1->numOfQwords < n2->numOfQwords)
+    else if (n1->numOfBytes < n2->numOfBytes)
     {
         return -1;
     }
-    for (int i = n1->numOfQwords - 1; i >= 0; i--)
+    for (int i = n1->numOfBytes - 1; i >= 0; i--)
     {
         if (n1->value[i] != n2->value[i])
             return n1->value[i] > n2->value[i] ? 1 : -1;
@@ -128,13 +105,15 @@ char compareAbs(Bignum *n1, Bignum *n2)
 void mulByTenRecursively(Bignum *n)
 {
     unsigned char next = 0;
-    next = mulByTen(&(n->value[n->numOfQwords - 1]));
-    int i = n->numOfQwords - 2;
-    addQwordIfNeeded(n, next);
+    next = mulByTen(&(n->value[n->numOfBytes - 1]));
+    long i = n->numOfBytes - 2;
+    addByteIfNeeded(n, next);
     for (; i >= 0; i--)
     {
-        // Adding ah to the next word, won't overflow
-        n->value[i + 1] += mulByTen(&(n->value[i]));
+        // Adding ah to the next byte, won't overflow
+        // n->value[i + 1] += mulByTen(&(n->value[i]));
+        next = addRecursively(n->value + i + 1, mulByTen(&(n->value[i])), n->numOfBytes - i - 1);
+        addByteIfNeeded(n, next);
     }
 }
 
@@ -143,115 +122,115 @@ long min(long x, long y)
     return x < y ? x : y;
 }
 
-Bignum operate(Bignum n1, Bignum n2, char op)
+Bignum operate(Bignum *n1, Bignum *n2, char op)
 {
     Bignum result;
-    result.numOfQwords = n1.numOfQwords + n2.numOfQwords;
+    result.numOfBytes = n1->numOfBytes + n2->numOfBytes;
     result.negative = 0;
-    result.value = calloc(result.numOfQwords, 1);
-    long minNum = min(n1.numOfQwords, n2.numOfQwords);
-    long maxNum = max(n1.numOfQwords, n2.numOfQwords);
+    result.value = calloc(result.numOfBytes, 1);
+    long minNum = min(n1->numOfBytes, n2->numOfBytes);
+    long maxNum = max(n1->numOfBytes, n2->numOfBytes);
     switch (op)
     {
     case '+':
-        if (n1.negative && n2.negative)
+        if (n1->negative && n2->negative)
         {
             // n1 and n2 are negative
             result.negative = 1;
-            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
-            Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
-            _add(bigger.value, smaller.value, result.value, minNum, maxNum);
+            Bignum *bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum *smaller = (bigger->value == n1->value) ? n2 : n1;
+            _add(bigger->value, smaller->value, result.value, minNum, maxNum);
         }
-        else if (n1.negative)
+        else if (n1->negative)
         {
             // n1 is negative, n2 is positive
-            if (compareAbs(&n1, &n2) == 1)
+            if (compareAbs(n1, n2) == 1)
             {
-                _sub(n1.value, n2.value, result.value, minNum, maxNum);
+                _sub(n1->value, n2->value, result.value, minNum, maxNum);
                 result.negative = 1;
             }
             else
             {
-                _sub(n2.value, n1.value, result.value, minNum, maxNum);
+                _sub(n2->value, n1->value, result.value, minNum, maxNum);
             }
         }
-        else if (n2.negative)
+        else if (n2->negative)
         {
             // n1 is positive, n2 is negative
-            if (compareAbs(&n2, &n1) == 1)
+            if (compareAbs(n2, n1) == 1)
             {
-                _sub(n2.value, n1.value, result.value, minNum, maxNum);
+                _sub(n2->value, n1->value, result.value, minNum, maxNum);
                 result.negative = 1;
             }
             else
             {
-                _sub(n1.value, n2.value, result.value, minNum, maxNum);
+                _sub(n1->value, n2->value, result.value, minNum, maxNum);
             }
         }
         else
         {
             // n1 and n2 are positive
             result.negative = 0;
-            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
-            Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
-            _add(bigger.value, smaller.value, result.value, minNum, maxNum);
+            Bignum *bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum *smaller = (bigger->value == n1->value) ? n2 : n1;
+            _add(bigger->value, smaller->value, result.value, minNum, maxNum);
         }
         break;
     case '-':
-        if (n1.negative && n2.negative)
+        if (n1->negative && n2->negative)
         {
             // n1 and n2 are negative
-            if (compareAbs(&n1, &n2) == 1)
+            if (compareAbs(n1, n2) == 1)
             {
-                _sub(n1.value, n2.value, result.value, minNum, maxNum);
+                _sub(n1->value, n2->value, result.value, minNum, maxNum);
                 result.negative = 1;
             }
             else
             {
-                _sub(n2.value, n1.value, result.value, minNum, maxNum);
+                _sub(n2->value, n1->value, result.value, minNum, maxNum);
             }
         }
-        else if (n1.negative)
+        else if (n1->negative)
         {
             // n1 is negative, n2 is positive
             result.negative = 1;
-            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
-            Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
-            _add(bigger.value, smaller.value, result.value, minNum, maxNum);
+            Bignum *bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum *smaller = (bigger->value == n1->value) ? n2 : n1;
+            _add(bigger->value, smaller->value, result.value, minNum, maxNum);
         }
-        else if (n2.negative)
+        else if (n2->negative)
         {
             // n1 is positive, n2 is negative
             result.negative = 0;
-            Bignum bigger = (compareAbs(&n1, &n2) == 1) ? n1 : n2;
-            Bignum smaller = (bigger.value == n1.value) ? n2 : n1;
-            _add(bigger.value, smaller.value, result.value, minNum, maxNum);
+            Bignum *bigger = (compareAbs(n1, n2) == 1) ? n1 : n2;
+            Bignum *smaller = (bigger->value == n1->value) ? n2 : n1;
+            _add(bigger->value, smaller->value, result.value, minNum, maxNum);
         }
         else
         {
             // n1 and n2 are positive
-            if (compareAbs(&n2, &n1) == 1)
+            if (compareAbs(n2, n1) == 1)
             {
-                _sub(n2.value, n1.value, result.value, minNum, maxNum);
+                _sub(n2->value, n1->value, result.value, minNum, maxNum);
                 result.negative = 1;
             }
             else
             {
-                _sub(n1.value, n2.value, result.value, minNum, maxNum);
+                _sub(n1->value, n2->value, result.value, minNum, maxNum);
             }
         }
         break;
     case '*':
-        result.negative = n1.negative != n2.negative;
-        _mul(n1.value, n2.value, result.value, n1.numOfQwords, n2.numOfQwords);
+        result.negative = n1->negative != n2->negative;
+        _mul(n1->value, n2->value, result.value, n1->numOfBytes, n2->numOfBytes);
         break;
     case '/':
-        result.negative = n1.negative & n2.negative;
+        result.negative = n1->negative != n2->negative;
         Bignum factor;
         factor.negative = 0;
-        factor.numOfQwords = 1;
+        factor.numOfBytes = 1;
         factor.value = calloc(1, 1);
-        _div(&n1, &n2, &result, &factor);
+        _div(n1, n2, &result, &factor);
         free(factor.value);
         break;
     }
@@ -259,12 +238,74 @@ Bignum operate(Bignum n1, Bignum n2, char op)
     return result;
 }
 
+void printReverse(Bignum *n, Bignum *divisor)
+{
+    if (n->numOfBytes == 1 && n->value[0] == 0)
+    {
+        return;
+    }
+
+    // Calculating n % 10 = n - (n/divisor)*divisor
+    Bignum nCopy;
+    nCopy.numOfBytes = n->numOfBytes;
+    nCopy.negative = 0;
+    nCopy.value = malloc(nCopy.numOfBytes);
+    memcpy(nCopy.value, n->value, n->numOfBytes);
+
+    Bignum temp = operate(n, divisor, '/');
+    free(n->value);
+    *n = temp;
+    divisor->value[0] = 10; // Resetting divisor to 10
+    temp = operate(&temp, divisor, '*');
+    Bignum toPrint = operate(&nCopy, &temp, '-');
+
+    free(temp.value);
+    free(nCopy.value);
+
+    printReverse(n, divisor);
+    printf("%d", toPrint.value[0]);
+
+    free(toPrint.value);
+}
+
+void printBignum(Bignum n)
+{
+    if (n.numOfBytes == 1 && n.value[0] == 0)
+    {
+        printf("0\n");
+        return;
+    }
+    Bignum divisor;
+
+    divisor.numOfBytes = 1;
+    divisor.negative = 0;
+    divisor.value = calloc(1, 1);
+    divisor.value[0] = 10;
+
+    // Copying this stack frame's n.value so it won't be distroyed
+    unsigned char *copiedValue = malloc(n.numOfBytes);
+    memcpy(copiedValue, n.value, n.numOfBytes);
+    n.value = copiedValue;
+
+    if (n.negative)
+    {
+        putchar('-');
+        n.negative = 0;
+    }
+
+    printReverse(&n, &divisor);
+    putchar('\n');
+
+    free(divisor.value);
+    free(n.value);
+}
+
 int main(int argc, char **argv)
 {
     // Initiate stack with a single Bignum
     s.size = 0;
     Bignum n;
-    n.numOfQwords = 0;
+    n.numOfBytes = 0;
     n.negative = 0;
     unsigned char next = 0;
     int c = 0;
@@ -273,14 +314,14 @@ int main(int argc, char **argv)
         switch (c)
         {
         case '0' ... '9':
-            if (n.numOfQwords == 0)
+            if (n.numOfBytes == 0)
             {
-                n.numOfQwords = 1;
+                n.numOfBytes = 1;
                 n.value = calloc(1, 1);
             }
             mulByTenRecursively(&n);
-            next = addRecursively(n.value, c - '0', n.numOfQwords - 1);
-            addQwordIfNeeded(&n, next);
+            next = addRecursively(n.value, c - '0', n.numOfBytes - 1);
+            addByteIfNeeded(&n, next);
             break;
 
         case '_':
@@ -288,10 +329,10 @@ int main(int argc, char **argv)
             break;
 
         case '\0' ... ' ':
-            if (n.numOfQwords != 0)
+            if (n.numOfBytes != 0)
             {
                 push(n);
-                n.numOfQwords = 0;
+                n.numOfBytes = 0;
                 n.negative = 0;
             }
             break;
@@ -300,28 +341,34 @@ int main(int argc, char **argv)
         case '-':
         case '*':
         case '/':
-            if (n.numOfQwords != 0)
+            if (n.numOfBytes != 0)
             {
                 push(n);
+                n.numOfBytes = 0;
+                n.negative = 0;
             }
             Bignum n2 = pop();
             Bignum n1 = pop();
-            push(operate(n1, n2, c));
+            push(operate(&n1, &n2, c));
             free(n1.value);
             free(n2.value);
             break;
 
         case 'c':
             freeStack();
-            for (int i = 0; i < s.size; i++)
-            {
-                s.stack[i].numOfQwords = 0;
-                s.stack[i].negative = 0;
-            }
             break;
 
         case 'p':
-            printBignum(peak());
+            if (n.numOfBytes != 0)
+            {
+                push(n);
+                n.numOfBytes = 0;
+                n.negative = 0;
+            }
+            if (s.size > 0)
+                printBignum(peak());
+            else
+                printf("0\n");
             break;
         }
     }

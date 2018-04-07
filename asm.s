@@ -1,5 +1,5 @@
 section .text
-global mulByTen, addRecursively, _add, _sub, _mul, _div
+global mulByTen, addRecursively, _add, _sub, _mul, _div, divByTwo
 extern compareAbs, trimBignum, realloc
 
 mulByTen:
@@ -179,10 +179,6 @@ _mul:
     pop rbp
     ret
 
-
-
-
-
 _div2:
     push rbp
     push rdi
@@ -202,6 +198,14 @@ _div2:
     push rdx
     mov rdi,rcx
     call mulByTwo               ; Multiplying factor by 2
+    pop rdx
+    pop rsi
+    pop rcx
+    pop rdi
+    push rdi
+    push rcx
+    push rsi
+    push rdx
     mov rdi,rsi
     call mulByTwo               ; Multiplying n2 by 2
     pop rdx
@@ -224,12 +228,12 @@ _div2:
     push rsi
     push rdx
     push rcx
-    mov rcx, [rsi]
+    mov rcx, [rsi]                  ; Preparing arguments for _sub
     mov r8, [rdi]
-    mov rdi, [rdi+8]            ; Preparing arguments for _sub
+    mov rdi, [rdi+8]
     mov rsi, [rsi+8]
     mov rdx, rdi
-    call _sub
+    call _sub                       ; Subtracting n2 from n1
     pop rcx
     pop rdx
     pop rsi
@@ -245,30 +249,34 @@ _div2:
     pop rdi
     push rdi
     push rsi
+    ; --------------
+    ; push rcx
+    ; push rdx
+    ; mov rdi, [rdx+8]            ; Getting result.value
+    ; mov rsi, [rdx]              ; Getting result.numOfBytes
+    ; add rsi,[rcx]               ; Adding factor.numOfBytes
+    ; call realloc 
+    ; pop rdx
+    ; pop rcx               ; Reallocating factor Bignum
+    ; mov [rdx+8],rax
+    ; mov r8,[rcx]
+    ; add [rdx], r8
+    ; -------------
     push rcx
     push rdx
-    mov rdi, [rdx+8]            ; Getting result.value
-    mov rsi, [rdx]              ; Getting result.numOfBytes
-    add rsi,[rcx]               ; Adding factor.numOfBytes
-    call realloc 
-    pop rdx
-    pop rcx               ; Reallocating factor Bignum
-    mov [rdx+8],rax
-    mov r8,[rcx]
-    add [rdx], r8
-    push rcx
-    push rdx
-    mov r8, [rdx]
-    mov rdi, [rdx+8]            ; Preparing arguments for _add
+    mov r8, [rdx]               ; Preparing arguments for _add
+    mov rdi, [rdx+8]
     mov rsi, [rcx+8]
     mov rcx, [rcx]
     mov rdx,rdi
-    call _add                   ; adding factor to result
+    call _add                   ; Adding factor to result
     pop rdx
-    mov rdi,rdx
-    push rdx
-    call trimBignum
-    pop rdx
+    ; --------------
+    ; mov rdi,rdx
+    ; push rdx
+    ; call trimBignum
+    ; pop rdx
+    ; --------------
     pop rcx
     pop rsi
     pop rdi
@@ -280,6 +288,14 @@ _div2:
         push rdx
         mov rdi,rcx
         call divByTwo               ; Dividing factor by 2
+        pop rdx
+        pop rsi
+        pop rcx
+        pop rdi
+        push rdi
+        push rcx
+        push rsi
+        push rdx
         mov rdi,rsi
         call divByTwo               ; Dividing n2 by 2
         pop rdx
@@ -293,7 +309,7 @@ _div2:
 _div:
     push rbp
     mov rax,[rcx+8]             ; Getting n1 value
-    mov byte [rax],1
+    mov byte [rax], 1
     call _div2
     push rcx
     push rdx
@@ -331,6 +347,7 @@ _div:
     pop rcx
     push rdi
     push rsi
+    ; ----------------
     ; mov rdi, [rdx+8]            ; Getting result.value
     ; mov rsi, [rdx]              ; Getting result.numOfBytes
     ; add rsi,[rcx]               ; Adding factor.numOfBytes
@@ -338,18 +355,21 @@ _div:
     ; mov [rdx+8],rax
     ; mov r8, [rcx]
     ; add [rdx], r8
+    ; ----------------
     push rcx
     push rdx
-    mov r8, [rdx]
-    mov rdi, [rdx+8]            ; Preparing arguments for _add
+    mov r8, [rdx]                 ; Preparing arguments for _add
+    mov rdi, [rdx+8]
     mov rsi, [rcx+8]
     mov rcx, [rcx]
     mov rdx,rdi
-    call _add                   ; adding factor to result
+    call _add                     ; Adding factor to result
+    ; ---------------
     ; pop rdx
     ; mov rdi,rdx
     ; push rdx
     ; call trimBignum
+    ; ---------------
     pop rdx
     pop rcx
     pop rsi
@@ -386,18 +406,12 @@ mulByTwo:
             mov rdi, [rdi+8]
             add rbx, 2
             mov rsi, rbx
-            push rax
             push rbx
-            push rdi
-            push rcx
             call realloc
-            pop rcx
-            pop rdi
             pop rbx
-            pop rax
             pop rdi
             mov [rdi+8], rax
-            inc byte [rax+rbx-1]    ; Adding carry to the new highest order byte
+            mov byte [rax+rbx-1], 1    ; Adding carry to the new highest order byte
             inc qword [rdi]         ; Incrementing numOfBytes
     
     .done:
@@ -424,12 +438,6 @@ divByTwo:
             loop .loop, rcx         ; Moving pointer 1 byte lower
 
     .done:
-        push rax
-        push rdi
-        push rcx
         call trimBignum
-        pop rcx
-        pop rdi
-        pop rax
         pop rbp
         ret
