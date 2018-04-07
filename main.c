@@ -225,6 +225,12 @@ Bignum operate(Bignum *n1, Bignum *n2, char op)
         _mul(n1->value, n2->value, result.value, n1->numOfBytes, n2->numOfBytes);
         break;
     case '/':
+        if (n2->numOfBytes == 1 && n2->value[0] == 0)
+        {
+            printf("DivideByZeroException: Divisor entered cannot be zero\n");
+            result.numOfBytes = 0;
+            break;
+        }
         result.negative = n1->negative != n2->negative;
         Bignum factor;
         factor.negative = 0;
@@ -349,7 +355,15 @@ int main(int argc, char **argv)
             }
             Bignum n2 = pop();
             Bignum n1 = pop();
-            push(operate(&n1, &n2, c));
+            Bignum result = operate(&n1, &n2, c);
+            if (result.numOfBytes > 0)
+            {
+                push(result);
+            }
+            else
+            {
+                free(result.value);
+            }
             free(n1.value);
             free(n2.value);
             break;
