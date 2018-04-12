@@ -27,7 +27,7 @@ extern void _div(Bignum *n1, Bignum *n2, Bignum *result, Bignum *factor);
 void trimBignum(Bignum *n)
 {
     long originalNum = n->numOfBytes;
-    for (int i = n->numOfBytes - 1; i > 0; i--)
+    for (long i = n->numOfBytes - 1; i > 0; i--)
     {
         if (n->value[i] == 0)
         {
@@ -94,7 +94,7 @@ char compareAbs(Bignum *n1, Bignum *n2)
     {
         return -1;
     }
-    for (int i = n1->numOfBytes - 1; i >= 0; i--)
+    for (long i = n1->numOfBytes - 1; i >= 0; i--)
     {
         if (n1->value[i] != n2->value[i])
             return n1->value[i] > n2->value[i] ? 1 : -1;
